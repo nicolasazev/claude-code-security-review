@@ -320,17 +320,17 @@ Respond with EXACTLY this JSON structure (no markdown, no code blocks):
             Tuple of (success, formatted_content, error_message)
         """
         try:
-            # Check if REPO_PATH is set and use it as base path
-            repo_path = os.environ.get('REPO_PATH')
-            if repo_path:
-                # Convert file_path to Path and check if it's absolute
-                path = Path(file_path)
-                if not path.is_absolute():
-                    # Make it relative to REPO_PATH
-                    path = Path(repo_path) / file_path
-            else:
-                path = Path(file_path)
-            
+            # Skola: o caminho vem do achado que o modelo escreveu. Fora do
+            # repositório (absoluto, com ../ ou por link simbólico), ele poria
+            # no prompt e no log um segredo como o /proc/self/environ.
+            repo_root = Path(os.environ.get('REPO_PATH') or os.getcwd()).resolve()
+            path = Path(file_path)
+            if not path.is_absolute():
+                path = repo_root / path
+            path = path.resolve()
+            if not path.is_relative_to(repo_root):
+                return False, "", f"Path is outside the repository: {file_path}"
+
             if not path.exists():
                 return False, "", f"File not found: {path}"
             

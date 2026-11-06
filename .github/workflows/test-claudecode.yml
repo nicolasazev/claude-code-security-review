@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - skola
   workflow_dispatch:
 
 permissions:

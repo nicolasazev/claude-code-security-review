@@ -1,5 +1,7 @@
 """Findings filter for reducing false positives in security audit results."""
 
+import os
+import posixpath
 import re
 from typing import Dict, Any, List, Tuple, Optional, Pattern
 import time
@@ -50,6 +52,33 @@ class HardExclusionRules:
         re.compile(r'\b(database|thread|socket|connection)\s+leak', re.IGNORECASE),
     ]
     
+    # Skola: dado de outra conta, sessão ou família que sobra no aparelho é
+    # isolamento entre contas (LGPD), não gestão de recurso, mesmo quando o
+    # título fala em "database leak".
+    _CROSS_ACCOUNT_PATTERNS: List[Pattern] = [
+        re.compile(r'\bcross[- ]?(account|user|tenant|session|famil)', re.IGNORECASE),
+        re.compile(r'\b(another|other|different|previous|prior|former)\s+([\w-]+\s+)?(user|account|tenant|session|famil|parent|guardian|household)', re.IGNORECASE),
+        re.compile(r'\b(old|last|next|new|same)\s+(user|account|tenant|famil|parent|guardian|household)', re.IGNORECASE),
+        re.compile(r'\bacross\s+(accounts|users|tenants|sessions|families)', re.IGNORECASE),
+        re.compile(r'\b(sign|log)(s|ged|ging|ed|ing)?[- ]?(out|off)\b', re.IGNORECASE),
+        re.compile(r'\b(account|user|session)\s+switch', re.IGNORECASE),
+        re.compile(r'\bswitch(es|ed|ing)?\s+(between\s+)?(the\s+)?(accounts?|users?|families)', re.IGNORECASE),
+        re.compile(r'\boutras?\s+(conta|sess[aã]o|fam[ií]lia)', re.IGNORECASE),
+        re.compile(r'\boutros?\s+usu[aá]rio', re.IGNORECASE),
+        re.compile(r'\b(troca|trocar)\s+de\s+(conta|usu[aá]rio|fam[ií]lia)', re.IGNORECASE),
+        re.compile(r'\bsa(ir|i|iu)\s+da\s+conta', re.IGNORECASE),
+        re.compile(r'\bdeslog', re.IGNORECASE),
+        re.compile(r'\b(conta|sess[aã]o|fam[ií]lia|usu[aá]rio)\s+anterior', re.IGNORECASE),
+        re.compile(r'\bentre\s+(contas|fam[ií]lias|usu[aá]rios|sess[oõ]es)', re.IGNORECASE),
+    ]
+
+    # Skola: as instruções da revisão são Markdown, e afrouxá-las tem que
+    # passar pela própria revisão.
+    _REVIEW_INSTRUCTION_FILES = frozenset({
+        '.github/revisao-de-seguranca.md',
+        '.github/filtro-de-falsos-positivos.md',
+    })
+
     _OPEN_REDIRECT_PATTERNS: List[Pattern] = [
         re.compile(r'\b(open redirect|unvalidated redirect)\b', re.IGNORECASE),
         re.compile(r'\b(redirect.(attack|exploit|vulnerability))\b', re.IGNORECASE),
@@ -90,7 +119,7 @@ class HardExclusionRules:
         """
         # Check if finding is in a Markdown file
         file_path = finding.get('file', '')
-        if file_path.lower().endswith('.md'):
+        if file_path.lower().endswith('.md') and not cls._is_review_instruction(file_path):
             return "Finding in Markdown documentation file"
         
         description = finding.get('description', '')
@@ -115,10 +144,12 @@ class HardExclusionRules:
             if pattern.search(combined_text):
                 return "Generic rate limiting recommendation"
         
-        # Check resource patterns - always exclude
-        for pattern in cls._RESOURCE_PATTERNS:
-            if pattern.search(combined_text):
-                return "Resource management finding (not a security vulnerability)"
+        # Check resource patterns - Skola: menos quando o vazamento chega a outra conta
+        is_cross_account = any(p.search(combined_text) for p in cls._CROSS_ACCOUNT_PATTERNS)
+        if not is_cross_account:
+            for pattern in cls._RESOURCE_PATTERNS:
+                if pattern.search(combined_text):
+                    return "Resource management finding (not a security vulnerability)"
         
         # Check open redirect patterns
         for pattern in cls._OPEN_REDIRECT_PATTERNS:
@@ -152,6 +183,15 @@ class HardExclusionRules:
                     return "SSRF finding in HTML file (not applicable to client-side code)"
         
         return None
+
+    @classmethod
+    def _is_review_instruction(cls, file_path: str) -> bool:
+        """Se o caminho (relativo ao REPO_PATH, quando absoluto) é instrução da revisão."""
+        path = file_path
+        repo_path = os.environ.get('REPO_PATH')
+        if os.path.isabs(path) and repo_path:
+            path = os.path.relpath(os.path.realpath(path), os.path.realpath(repo_path))
+        return posixpath.normpath(path).lower() in cls._REVIEW_INSTRUCTION_FILES
 
 
 class FindingsFilter:
