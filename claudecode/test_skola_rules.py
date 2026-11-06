@@ -83,6 +83,14 @@ class TestCrossAccountResourceLeak:
         {'title': 'Database leak: data of the previous signed-in family remains'},
         {'title': "SQLite database leak: previous parent's children visible to the next guardian"},
         {'title': 'Database leak: the last household stays on the device'},
+        {'title': 'Local database leak: user B sees user A lessons'},
+        {'title': 'Database leak on shared devices exposes children records'},
+        {'title': 'Database leak: the second family to sign in sees the first family data'},
+        {'title': 'Database leak: a different person using the phone sees the lessons'},
+        {'title': 'Database leak between tenants'},
+        {'title': 'Vazamento: database leak quando outra pessoa entra no aparelho'},
+        {'title': 'Database leak: dados da família A aparecem para a família B'},
+        {'title': 'Connection leak to a foreign account'},
     ])
     def test_leak_of_another_account_data_is_not_excluded(self, finding):
         assert HardExclusionRules.get_exclusion_reason(finding) is None

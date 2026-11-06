@@ -59,7 +59,12 @@ class HardExclusionRules:
         re.compile(r'\bcross[- ]?(account|user|tenant|session|famil)', re.IGNORECASE),
         re.compile(r'\b(another|other|different|previous|prior|former)\s+([\w-]+\s+)?(user|account|tenant|session|famil|parent|guardian|household)', re.IGNORECASE),
         re.compile(r'\b(old|last|next|new|same)\s+(user|account|tenant|famil|parent|guardian|household)', re.IGNORECASE),
-        re.compile(r'\bacross\s+(accounts|users|tenants|sessions|families)', re.IGNORECASE),
+        re.compile(r'\b(across|between)\s+(accounts|users|tenants|sessions|families)', re.IGNORECASE),
+        re.compile(r'\b(first|second)\s+(user|account|tenant|famil|parent|guardian)', re.IGNORECASE),
+        re.compile(r'\b(user|account|tenant|family|parent|guardian)\s+[ab]\b', re.IGNORECASE),
+        re.compile(r'\b(shared|same)\s+(device|phone|computer|browser)', re.IGNORECASE),
+        re.compile(r'\b(different|another|other)\s+person', re.IGNORECASE),
+        re.compile(r'\bforeign\s+(user|account|tenant|famil)', re.IGNORECASE),
         re.compile(r'\b(sign|log)(s|ged|ging|ed|ing)?[- ]?(out|off)\b', re.IGNORECASE),
         re.compile(r'\b(account|user|session)\s+switch', re.IGNORECASE),
         re.compile(r'\bswitch(es|ed|ing)?\s+(between\s+)?(the\s+)?(accounts?|users?|families)', re.IGNORECASE),
@@ -70,6 +75,9 @@ class HardExclusionRules:
         re.compile(r'\bdeslog', re.IGNORECASE),
         re.compile(r'\b(conta|sess[aã]o|fam[ií]lia|usu[aá]rio)\s+anterior', re.IGNORECASE),
         re.compile(r'\bentre\s+(contas|fam[ií]lias|usu[aá]rios|sess[oõ]es)', re.IGNORECASE),
+        re.compile(r'\b(conta|fam[ií]lia|usu[aá]rio)\s+[ab]\b', re.IGNORECASE),
+        re.compile(r'\boutra\s+pessoa', re.IGNORECASE),
+        re.compile(r'\bmesmo\s+(aparelho|celular|computador|navegador)', re.IGNORECASE),
     ]
 
     # Skola: as instruções da revisão são Markdown, e afrouxá-las tem que
